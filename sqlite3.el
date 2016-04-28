@@ -36,7 +36,7 @@
       (setq bounds (apply #'vector bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
-(defun sqlite3-execute (sqlite query cb)
+(defun sqlite3-execute (sqlite query &optional cb)
   (sqlite3-core-execute sqlite query cb))
 
 (provide 'sqlite3)
