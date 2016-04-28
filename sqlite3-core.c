@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <emacs-module.h>
@@ -27,6 +28,13 @@
 #include <sqlite3.h>
 
 int plugin_is_GPL_compatible;
+
+struct el_sql_resultset {
+	sqlite3 *db;
+	sqlite3_stmt *stmt;
+	emacs_value fields;
+	bool eof;
+};
 
 static char*
 retrieve_string(emacs_env *env, emacs_value str, ptrdiff_t *size)
@@ -48,6 +56,14 @@ static void
 el_sqlite3_free(void *arg)
 {
 	sqlite3_close((sqlite3*)arg);
+}
+
+static void
+el_sqlite3_resultset_free(void *arg)
+{
+	struct el_sql_resultset *rs = (struct el_sql_resultset*)arg;
+	sqlite3_finalize(rs->stmt);
+	free(rs);
 }
 
 static emacs_value
@@ -256,9 +272,17 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	emacs_value rargs[] = {fields};
 	fields = env->funcall(env, Qreverse, 1, rargs);
 
-	// XXX without callback
-
 	emacs_value cb = args[2];
+	if (!env->is_not_nil(env, cb)) {
+		struct el_sql_resultset *result = malloc(sizeof(struct el_sql_resultset));
+
+		result->db = sdb;
+		result->stmt = stmt;
+		result->fields = fields;
+		result->eof = false;
+		return env->make_user_ptr(env, el_sqlite3_resultset_free, result);
+	}
+
 	while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
 		emacs_value cb_args[2];
 		cb_args[0] = row_to_value(env, stmt);
@@ -273,6 +297,52 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 
 	return env->intern(env, "nil");
 }
+
+static emacs_value
+Fsqlite3_resultset_next(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	struct el_sql_resultset *result = env->get_user_ptr(env, args[0]);
+
+	int ret = sqlite3_step(result->stmt);
+	if (ret != SQLITE_ROW && ret != SQLITE_OK && ret != SQLITE_DONE) {
+		// XXX exception
+		return env->intern(env, "nil");
+	}
+
+	if (ret == SQLITE_DONE) {
+		result->eof = true;
+		return env->intern(env, "nil");
+	}
+
+	return row_to_value(env, result->stmt);
+}
+
+static emacs_value
+Fsqlite3_resultset_fields(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	struct el_sql_resultset *result = env->get_user_ptr(env, args[0]);
+	return result->fields;
+}
+
+static emacs_value
+Fsqlite3_resultset_eof(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	struct el_sql_resultset *result = env->get_user_ptr(env, args[0]);
+	if (result->eof) {
+		return env->intern(env, "t");
+	} else {
+		return env->intern(env, "nil");
+	}
+}
+
+//static emacs_value
+//el_sqlite3_exec() {
+//}
+//
+//static emacs_value
+//Fsqlite3_transaction()
+//{
+//}
 
 static void
 bind_function(emacs_env *env, const char *name, emacs_value Sfun)
@@ -305,6 +375,11 @@ emacs_module_init(struct emacs_runtime *ert)
 	DEFUN("sqlite3-core-new", Fsqlite3_new, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 2, 3, NULL, NULL);
 	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 3, 3, NULL, NULL);
+
+	// resultset API
+	DEFUN("sqlite3-resultset-next", Fsqlite3_resultset_next, 1, 1, NULL, NULL);
+	DEFUN("sqlite3-resultset-fields", Fsqlite3_resultset_fields, 1, 1, NULL, NULL);
+	DEFUN("sqlite3-resultset-eof", Fsqlite3_resultset_eof, 1, 1, NULL, NULL);
 
 #undef DEFUN
 
