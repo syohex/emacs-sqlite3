@@ -299,6 +299,42 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 }
 
 static emacs_value
+el_sqlite3_exec(emacs_env *env, sqlite3 *sdb, const char *query)
+{
+	if (sdb == NULL) {
+		// XXX exception
+	}
+
+	int ret = sqlite3_exec(sdb, query, NULL, NULL, NULL);
+	if (ret != SQLITE_OK) {
+		return env->intern(env, "nil");
+	}
+
+	return env->intern(env, "t");
+}
+
+static emacs_value
+Fsqlite3_transaction(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
+	return el_sqlite3_exec(env, sdb, "begin");
+}
+
+static emacs_value
+Fsqlite3_commit(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
+	return el_sqlite3_exec(env, sdb, "commit");
+}
+
+static emacs_value
+Fsqlite3_rollback(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
+	return el_sqlite3_exec(env, sdb, "rollback");
+}
+
+static emacs_value
 Fsqlite3_resultset_next(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
 {
 	struct el_sql_resultset *result = env->get_user_ptr(env, args[0]);
@@ -335,15 +371,6 @@ Fsqlite3_resultset_eof(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	}
 }
 
-//static emacs_value
-//el_sqlite3_exec() {
-//}
-//
-//static emacs_value
-//Fsqlite3_transaction()
-//{
-//}
-
 static void
 bind_function(emacs_env *env, const char *name, emacs_value Sfun)
 {
@@ -375,6 +402,9 @@ emacs_module_init(struct emacs_runtime *ert)
 	DEFUN("sqlite3-core-new", Fsqlite3_new, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 2, 3, NULL, NULL);
 	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 3, 3, NULL, NULL);
+	DEFUN("sqlite3-transaction", Fsqlite3_transaction, 1, 1, NULL, NULL);
+	DEFUN("sqlite3-commit", Fsqlite3_commit, 1, 1, NULL, NULL);
+	DEFUN("sqlite3-rollback", Fsqlite3_rollback, 1, 1, NULL, NULL);
 
 	// resultset API
 	DEFUN("sqlite3-resultset-next", Fsqlite3_resultset_next, 1, 1, NULL, NULL);
