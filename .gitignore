@@ -1,4 +1,4 @@
 *.o
 *.so
 *.elc
-/example/
+/example/example.db
