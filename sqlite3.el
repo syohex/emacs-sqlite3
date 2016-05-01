@@ -28,7 +28,7 @@
 
 ;;;###autoload
 (defun sqlite3-new (&optional dbpath)
-  "Create `sqlite3' instance. If `dbpath' is omiited, then database is stored
+  "Create `sqlite3' instance. If `dbpath' is omitted, then database is stored
 into memory."
   (sqlite3-core-new dbpath))
 
