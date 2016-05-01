@@ -26,6 +26,7 @@
 (require 'cl-lib)
 (require 'sqlite3-core)
 
+;;;###autoload
 (defun sqlite3-new (&optional dbpath)
   "Create `sqlite3' instance. If `dbpath' is omiited, then database is stored
 into memory."
