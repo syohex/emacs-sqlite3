@@ -43,6 +43,11 @@
     (let ((got (sqlite3-execute-batch db "INSERT INTO foo(name) values(?);" ["Bob"])))
       (should (= got 1)))))
 
+(ert-deftest sqlite3-execute-exception ()
+  "Execute invalid SQL query and raise exception."
+  (let ((db (sqlite3-new)))
+    (should-error (sqlite3-execute-batch db "FOO BAR BAZ;"))))
+
 (ert-deftest sqlite3-execute-select-with-callback ()
   "Execute SELECT query with callback"
   (let ((db (sqlite3-new)))
