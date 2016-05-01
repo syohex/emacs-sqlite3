@@ -147,6 +147,7 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	char *query = retrieve_string(env, args[1], &size), *sql, *tail;
 	emacs_value Qnil = env->intern(env, "nil");
 	emacs_value retval = Qnil;
+	const char *errmsg = NULL;
 
 	char *top = malloc(size);
 	if (top == NULL) {
@@ -163,13 +164,8 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 		if (nargs > 2) {
 			const char *err = bind_values(env, sdb, stmt, args[2]);
 			if (err != NULL) {
-				free(top);
-				free(query);
-
-				emacs_value errstr = env->make_string(env, err, strlen(err));
-				env->non_local_exit_signal(env, env->intern(env, "error"),
-							   errstr);
-				return Qnil;
+				errmsg = err;
+				goto exit;
 			}
 		}
 
@@ -179,6 +175,7 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 				sqlite3_reset(stmt);
 			}
 
+			errmsg = sqlite3_errmsg(sdb);
 			goto exit;
 		}
 
@@ -188,6 +185,7 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 		ret = sqlite3_step(stmt);
 		sqlite3_finalize(stmt);
 		if (ret != SQLITE_OK && ret != SQLITE_DONE) {
+			errmsg = sqlite3_errmsg(sdb);
 			goto exit;
 		}
 	}
@@ -197,6 +195,11 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 exit:
 	free(top);
 	free(query);
+
+	if (errmsg != NULL) {
+		emacs_value errstr = env->make_string(env, errmsg, strlen(errmsg));
+		env->non_local_exit_signal(env, env->intern(env, "error"), errstr);
+	}
 
 	return retval;
 }
@@ -347,8 +350,9 @@ Fsqlite3_resultset_next(emacs_env *env, ptrdiff_t nargs, emacs_value args[], voi
 
 	int ret = sqlite3_step(result->stmt);
 	if (ret != SQLITE_ROW && ret != SQLITE_OK && ret != SQLITE_DONE) {
-		const char errmsg = sqlite3_errmsg(result->db);
-		env->non_local_exit_signal(env, env->intern(env, "error"), errmsg);
+		const char *errmsg = sqlite3_errmsg(result->db);
+		env->non_local_exit_signal(env, env->intern(env, "error"),
+					   env->make_string(env, errmsg, strlen(errmsg)));
 		return env->intern(env, "nil");
 	}
 
