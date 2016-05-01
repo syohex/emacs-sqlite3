@@ -129,8 +129,7 @@ bind_values(emacs_env *env, sqlite3 *db, sqlite3_stmt *stmt, emacs_value bounds)
 		} else if (env->eq(env, bound, env->intern(env, "false"))) {
 			ret = sqlite3_bind_int(stmt, i+1, 0);
 		} else {
-			// XXX Boolean support ??
-			// invalid argument
+			return "invalid argument";
 		}
 
 		if (ret != SQLITE_OK)
@@ -146,12 +145,13 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
 	ptrdiff_t size;
 	char *query = retrieve_string(env, args[1], &size), *sql, *tail;
-	emacs_value retval = env->intern(env, "nil");
+	emacs_value Qnil = env->intern(env, "nil");
+	emacs_value retval = Qnil;
 
 	char *top = malloc(size);
 	if (top == NULL) {
 		free(query);
-		return env->intern(env, "nil");
+		return Qnil;
 	}
 
 	memcpy(top, query, size);
@@ -163,7 +163,13 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 		if (nargs > 2) {
 			const char *err = bind_values(env, sdb, stmt, args[2]);
 			if (err != NULL) {
-				goto exit;
+				free(top);
+				free(query);
+
+				emacs_value errstr = env->make_string(env, err, strlen(err));
+				env->non_local_exit_signal(env, env->intern(env, "error"),
+							   errstr);
+				return Qnil;
 			}
 		}
 
