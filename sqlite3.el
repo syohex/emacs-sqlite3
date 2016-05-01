@@ -39,6 +39,7 @@ into memory."
   (if (null bounds)
       (sqlite3-core-execute-batch sqlite query)
     (unless (vectorp bounds)
+      (cl-assert (listp bounds))
       (setq bounds (apply #'vector bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
