@@ -37,6 +37,7 @@ Create sqlite3 instance. If `db-path` is omitted, data is stored in memory.
 
 #### `(sqlite3-execute-batch db query &optional bounds)`
 
+Execute SQL `query` for `db` database.
 First argument `db` must be sqlite3 instance. If you use placeholders in `query`,
 then you must pass `bounds` too.
 
