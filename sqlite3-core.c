@@ -347,7 +347,8 @@ Fsqlite3_resultset_next(emacs_env *env, ptrdiff_t nargs, emacs_value args[], voi
 
 	int ret = sqlite3_step(result->stmt);
 	if (ret != SQLITE_ROW && ret != SQLITE_OK && ret != SQLITE_DONE) {
-		// XXX exception
+		const char errmsg = sqlite3_errmsg(result->db);
+		env->non_local_exit_signal(env, env->intern(env, "error"), errmsg);
 		return env->intern(env, "nil");
 	}
 
