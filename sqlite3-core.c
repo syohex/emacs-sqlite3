@@ -124,6 +124,10 @@ bind_values(emacs_env *env, sqlite3 *db, sqlite3_stmt *stmt, emacs_value bounds)
 			ret = sqlite3_bind_double(stmt, i+1, num);
 		} else if (env->eq(env, bound, env->intern(env, "nil"))) {
 			ret = sqlite3_bind_null(stmt, i+1);
+		} else if (env->eq(env, bound, env->intern(env, "true"))) {
+			ret = sqlite3_bind_int(stmt, i+1, 1);
+		} else if (env->eq(env, bound, env->intern(env, "false"))) {
+			ret = sqlite3_bind_int(stmt, i+1, 0);
 		} else {
 			// XXX Boolean support ??
 			// invalid argument
