@@ -27,17 +27,24 @@
 (require 'sqlite3-core)
 
 (defun sqlite3-new (&optional dbpath)
+  "Create `sqlite3' instance. If `dbpath' is omiited, then database is stored
+into memory."
   (sqlite3-core-new dbpath))
 
 (defun sqlite3-execute-batch (sqlite query &optional bounds)
+  "Execute SQL `query' for `db' database."
   (if (null bounds)
       (sqlite3-core-execute-batch sqlite query)
     (unless (vectorp bounds)
       (setq bounds (apply #'vector bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
-(defun sqlite3-execute (sqlite query &optional cb)
-  (sqlite3-core-execute sqlite query cb))
+(defun sqlite3-execute (sqlite query &optional callback)
+  "Execute SQL `query' which has `SELECT' command. If `callback' argument is
+specified, `callback' function is called with database row. `callback' takes
+two arguments, first argument is row element of list, second argument is
+field names of list."
+  (sqlite3-core-execute sqlite query callback))
 
 (provide 'sqlite3)
 
