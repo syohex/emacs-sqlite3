@@ -301,10 +301,6 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 static emacs_value
 el_sqlite3_exec(emacs_env *env, sqlite3 *sdb, const char *query)
 {
-	if (sdb == NULL) {
-		// XXX exception
-	}
-
 	int ret = sqlite3_exec(sdb, query, NULL, NULL, NULL);
 	if (ret != SQLITE_OK) {
 		return env->intern(env, "nil");

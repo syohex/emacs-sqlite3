@@ -34,6 +34,8 @@ into memory."
 
 (defun sqlite3-execute-batch (sqlite query &optional bounds)
   "Execute SQL `query' for `db' database."
+  (cl-assert (not (null sqlite)))
+  (cl-assert (stringp query))
   (if (null bounds)
       (sqlite3-core-execute-batch sqlite query)
     (unless (vectorp bounds)
@@ -45,6 +47,8 @@ into memory."
 specified, `callback' function is called with database row. `callback' takes
 two arguments, first argument is row element of list, second argument is
 field names of list."
+  (cl-assert (not (null sqlite)))
+  (cl-assert (stringp query))
   (sqlite3-core-execute sqlite query callback))
 
 (provide 'sqlite3)
