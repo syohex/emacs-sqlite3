@@ -21,8 +21,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <emacs-module.h>
 
 #include <sqlite3.h>
