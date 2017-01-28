@@ -41,7 +41,7 @@ Execute SQL `query` for `db` database.
 First argument `db` must be sqlite3 instance. If you use placeholders in `query`,
 then you must pass `bounds` too.
 
-#### `(sqlite3-execute db query &optional callback)`
+#### `(sqlite3-execute db query &optional callback bounds)`
 
 Interface for executing `SELECT` query. If you pass `callback` argument,
 `callback` is called with `SELECT` results. `callback` takes 2 arguments,
