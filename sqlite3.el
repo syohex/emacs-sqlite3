@@ -43,14 +43,19 @@ into memory."
       (setq bounds (vconcat bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
-(defun sqlite3-execute (sqlite query &optional callback)
+(defun sqlite3-execute (sqlite query &optional callback bounds)
   "Execute SQL `query' which has `SELECT' command. If `callback' argument is
 specified, `callback' function is called with database row. `callback' takes
 two arguments, first argument is row element of list, second argument is
 field names of list."
   (cl-assert (not (null sqlite)))
   (cl-assert (stringp query))
-  (sqlite3-core-execute sqlite query callback))
+  (if (null bounds)
+      (sqlite3-core-execute sqlite query callback)
+    (unless (vectorp bounds)
+      (cl-assert (listp bounds))
+      (setq bounds (vconcat bounds)))
+    (sqlite3-core-execute sqlite query callback bounds)))
 
 (provide 'sqlite3)
 
