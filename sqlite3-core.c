@@ -255,6 +255,9 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
 	ptrdiff_t size;
 	char *query = retrieve_string(env, args[1], &size);
+	emacs_value Qnil = env->intern(env, "nil");
+	emacs_value retval = Qnil;
+	const char *errmsg = NULL;
 
 	sqlite3_stmt *stmt = NULL;
 	int ret = sqlite3_prepare_v2(sdb, query, size, &stmt, NULL);
@@ -263,12 +266,11 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 			sqlite3_finalize(stmt);
 		}
 
-		free(query);
-		return env->intern(env, "nil");
+		goto exit;
 	}
 
 	emacs_value Qcons = env->intern(env, "cons");
-	emacs_value fields = env->intern(env, "nil");
+	emacs_value fields = Qnil;
 	int count = sqlite3_column_count(stmt);
 	for (int i = 0; i < count; ++i) {
 		const char *name = sqlite3_column_name(stmt, i);
@@ -291,7 +293,8 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 		result->stmt = stmt;
 		result->fields = fields;
 		result->eof = false;
-		return env->make_user_ptr(env, el_sqlite3_resultset_free, result);
+		retval = env->make_user_ptr(env, el_sqlite3_resultset_free, result);
+		goto exit;
 	}
 
 	while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
@@ -302,11 +305,16 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	}
 
 	sqlite3_finalize(stmt);
-	if (ret != SQLITE_OK && ret != SQLITE_DONE) {
-		return env->intern(env, "nil");
+
+ exit:
+	free(query);
+
+	if (errmsg != NULL) {
+		emacs_value errstr = env->make_string(env, errmsg, strlen(errmsg));
+		env->non_local_exit_signal(env, env->intern(env, "error"), errstr);
 	}
 
-	return env->intern(env, "nil");
+	return retval;
 }
 
 static emacs_value
