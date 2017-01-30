@@ -48,6 +48,9 @@ Interface for executing `SELECT` query. If you pass `callback` argument,
 `row` and `fields`. `row` is value, `fields` are column names. If `callback`
 is not specified, this function returns `resultset` instance.
 
+You can specify placeholders of `query` by passing cons `query` argument like
+`'("SELECT * FROM sample WHERE name = ?" . ["Alice"])`.
+
 #### `(sqlite3-resultset-next resultset)`
 
 Return next row.
