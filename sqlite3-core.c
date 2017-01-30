@@ -113,7 +113,7 @@ bind_values(emacs_env *env, sqlite3 *db, sqlite3_stmt *stmt, emacs_value bounds)
 		if (eq_type(env, type, "string")) {
 			ptrdiff_t size;
 			const char *p = retrieve_string(env, bound, &size);
-			ret = sqlite3_bind_text(stmt, i+1, p, size, NULL);
+			ret = sqlite3_bind_text(stmt, i+1, p, size-1, NULL);
 		} else if (eq_type(env, type, "integer")) {
 			intmax_t num = env->extract_integer(env, bound);
 			ret = sqlite3_bind_int64(stmt, i+1, num);
