@@ -37,7 +37,7 @@ into memory."
   (cl-assert (not (null sqlite)))
   (cl-assert (stringp query))
   (if (null bounds)
-      (sqlite3-core-execute-batch sqlite query)
+      (sqlite3-core-execute-batch sqlite query nil)
     (unless (vectorp bounds)
       (cl-assert (listp bounds))
       (setq bounds (vconcat bounds)))

@@ -146,6 +146,7 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	emacs_value Qnil = env->intern(env, "nil");
 	emacs_value retval = Qnil;
 	const char *errmsg = NULL;
+	bool hasPlaceHolder = env->is_not_nil(env, args[2]);
 
 	char *top = malloc(size);
 	if (top == NULL) {
@@ -156,10 +157,10 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	memcpy(top, query, size);
 	tail = top;
 
-	while (*(sql = tail)) {
+	while (*(sql = tail) != '\0') {
 		sqlite3_stmt *stmt = NULL;
 		int ret = sqlite3_prepare_v2(sdb, sql, -1, &stmt, (const char**)&tail);
-		if (nargs > 2) {
+		if (hasPlaceHolder) {
 			const char *err = bind_values(env, sdb, stmt, args[2]);
 			if (err != NULL) {
 				errmsg = err;
@@ -425,7 +426,7 @@ emacs_module_init(struct emacs_runtime *ert)
 	bind_function (env, lsym, env->make_function(env, amin, amax, csym, doc, data))
 
 	DEFUN("sqlite3-core-new", Fsqlite3_new, 1, 1, NULL, NULL);
-	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 2, 3, NULL, NULL);
+	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 3, 3, NULL, NULL);
 	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 4, 4, NULL, NULL);
 	DEFUN("sqlite3-transaction", Fsqlite3_transaction, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-commit", Fsqlite3_commit, 1, 1, NULL, NULL);
