@@ -1,5 +1,10 @@
+UNAME_S=$(shell uname -s)
 EMACS_ROOT ?= ../..
-EMACS ?= emacs
+ifeq ($(UNAME_S),Darwin)
+	EMACS ?= /Applications/Emacs.app/Contents/MacOS/Emacs
+else
+	EMACS ?= emacs
+endif
 
 CC      = gcc
 LD      = gcc
