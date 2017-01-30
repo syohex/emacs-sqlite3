@@ -1,9 +1,10 @@
 ;;; sqlite3.el --- sqlite3 binding of Emacs Lisp
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-sqlite3
+;; Package-Requires: ((emacs "25"))
 ;; Version: 0.01
 
 ;; This program is free software; you can redistribute it and/or modify
