@@ -49,8 +49,14 @@ specified, `callback' function is called with database row. `callback' takes
 two arguments, first argument is row element of list, second argument is
 field names of list."
   (cl-assert (not (null sqlite)))
-  (cl-assert (stringp query))
-  (sqlite3-core-execute sqlite query callback))
+  (cl-assert (or (stringp query) (consp query)))
+  (if (not (consp query))
+      (sqlite3-core-execute sqlite query nil callback)
+    (let ((bounds (cdr query)))
+      (unless (vectorp bounds)
+        (cl-assert (listp bounds))
+        (setq bounds (vconcat bounds)))
+      (sqlite3-core-execute sqlite (car query) bounds callback))))
 
 (provide 'sqlite3)
 

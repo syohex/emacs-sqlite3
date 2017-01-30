@@ -269,6 +269,14 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 		goto exit;
 	}
 
+	if (env->is_not_nil(env, args[2])) {
+		const char *err = bind_values(env, sdb, stmt, args[2]);
+		if (err != NULL) {
+			errmsg = err;
+			goto exit;
+		}
+	}
+
 	emacs_value Qcons = env->intern(env, "cons");
 	emacs_value fields = Qnil;
 	int count = sqlite3_column_count(stmt);
@@ -285,7 +293,7 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	emacs_value rargs[] = {fields};
 	fields = env->funcall(env, Qreverse, 1, rargs);
 
-	emacs_value cb = args[2];
+	emacs_value cb = args[3];
 	if (!env->is_not_nil(env, cb)) {
 		struct el_sql_resultset *result = malloc(sizeof(struct el_sql_resultset));
 
@@ -418,7 +426,7 @@ emacs_module_init(struct emacs_runtime *ert)
 
 	DEFUN("sqlite3-core-new", Fsqlite3_new, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 2, 3, NULL, NULL);
-	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 3, 3, NULL, NULL);
+	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 4, 4, NULL, NULL);
 	DEFUN("sqlite3-transaction", Fsqlite3_transaction, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-commit", Fsqlite3_commit, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-rollback", Fsqlite3_rollback, 1, 1, NULL, NULL);

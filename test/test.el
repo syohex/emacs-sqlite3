@@ -89,4 +89,19 @@
       (sqlite3-resultset-next resultset) ;; last call
       (should (sqlite3-resultset-eof resultset)))))
 
+(ert-deftest sqlite3-execute-select-with-placeholder ()
+  "Execute SELECT query with callback"
+  (let ((db (sqlite3-new)))
+    (sqlite3-execute-batch db "CREATE TABLE sample(id integer primary key, name text);")
+    (sqlite3-execute-batch db "INSERT INTO sample(name) values(\"Alice\");")
+    (sqlite3-execute-batch db "INSERT INTO sample(name) values(\"Bob\");")
+    (let ((rows 0))
+      (sqlite3-execute
+       db
+       '("SELECT name FROM sample WHERE name = ?" . ["Alice"])
+       (lambda (row fields)
+         (cl-incf rows)
+         (should (member (car row) '("Alice")))))
+      (should (= rows 1)))))
+
 ;;; test-sqlite3.el ends here
