@@ -103,6 +103,8 @@
        (lambda (row fields)
          (cl-incf rows)
          (should (member (car row) '("Alice")))))
-      (should (= rows 1)))))
+      (should (= rows 1)))
+
+    (should-error (sqlite3-execute-batch db "SELECT *" (lambda (&rest _args)) 'not-null))))
 
 ;;; test-sqlite3.el ends here
