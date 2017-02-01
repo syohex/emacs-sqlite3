@@ -98,7 +98,8 @@
     (let ((rows 0))
       (sqlite3-execute
        db
-       '("SELECT name FROM sample WHERE name = ?" . ["Alice"])
+       "SELECT name FROM sample WHERE name = ?"
+       ["Alice"]
        (lambda (row fields)
          (cl-incf rows)
          (should (member (car row) '("Alice")))))

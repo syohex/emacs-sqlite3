@@ -44,20 +44,26 @@ into memory."
       (setq bounds (vconcat bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
-(defun sqlite3-execute (sqlite query &optional callback)
-  "Execute SQL `query' which has `SELECT' command. If `callback' argument is
-specified, `callback' function is called with database row. `callback' takes
-two arguments, first argument is row element of list, second argument is
-field names of list."
+(defun sqlite3-execute (sqlite query &rest args)
+  "Execute SQL `query' which has `SELECT' command.
+
+Rest parameters are `bounds' and `callback'. You can its argument as,
+either '(bounds) or '(callback) or '(bounds callback). `callback' function
+is called with database row. `callback' takes two arguments, first argument
+is row element of list, second argument is field names of list."
   (cl-assert (not (null sqlite)))
-  (cl-assert (or (stringp query) (consp query)))
-  (if (not (consp query))
-      (sqlite3-core-execute sqlite query nil callback)
-    (let ((bounds (cdr query)))
-      (unless (vectorp bounds)
-        (cl-assert (listp bounds))
-        (setq bounds (vconcat bounds)))
-      (sqlite3-core-execute sqlite (car query) bounds callback))))
+  (cl-assert (stringp query))
+  (cl-assert (<= (length args) 2))
+  (let* ((rargs (reverse args))
+         (callback (car rargs))
+         bounds)
+    (when (functionp callback)
+      (setq rargs (cdr rargs)))
+    (when rargs
+      (setq bounds (car rargs)))
+    (when (and bounds (not (vectorp bounds)))
+      (setq bounds (vconcat bounds)))
+    (sqlite3-core-execute sqlite query bounds callback)))
 
 (provide 'sqlite3)
 
