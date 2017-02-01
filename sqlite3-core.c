@@ -113,7 +113,7 @@ bind_values(emacs_env *env, sqlite3 *db, sqlite3_stmt *stmt, emacs_value bounds)
 		if (eq_type(env, type, "string")) {
 			ptrdiff_t size;
 			const char *p = retrieve_string(env, bound, &size);
-			ret = sqlite3_bind_text(stmt, i+1, p, size, NULL);
+			ret = sqlite3_bind_text(stmt, i+1, p, size-1, NULL);
 		} else if (eq_type(env, type, "integer")) {
 			intmax_t num = env->extract_integer(env, bound);
 			ret = sqlite3_bind_int64(stmt, i+1, num);
@@ -146,6 +146,7 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	emacs_value Qnil = env->intern(env, "nil");
 	emacs_value retval = Qnil;
 	const char *errmsg = NULL;
+	bool hasPlaceHolder = env->is_not_nil(env, args[2]);
 
 	char *top = malloc(size);
 	if (top == NULL) {
@@ -156,10 +157,10 @@ Fsqlite3_execute_batch(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void
 	memcpy(top, query, size);
 	tail = top;
 
-	while (*(sql = tail)) {
+	while (*(sql = tail) != '\0') {
 		sqlite3_stmt *stmt = NULL;
 		int ret = sqlite3_prepare_v2(sdb, sql, -1, &stmt, (const char**)&tail);
-		if (nargs > 2) {
+		if (hasPlaceHolder) {
 			const char *err = bind_values(env, sdb, stmt, args[2]);
 			if (err != NULL) {
 				errmsg = err;
@@ -255,6 +256,9 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
 	ptrdiff_t size;
 	char *query = retrieve_string(env, args[1], &size);
+	emacs_value Qnil = env->intern(env, "nil");
+	emacs_value retval = Qnil;
+	const char *errmsg = NULL;
 
 	sqlite3_stmt *stmt = NULL;
 	int ret = sqlite3_prepare_v2(sdb, query, size, &stmt, NULL);
@@ -263,12 +267,19 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 			sqlite3_finalize(stmt);
 		}
 
-		free(query);
-		return env->intern(env, "nil");
+		goto exit;
+	}
+
+	if (env->is_not_nil(env, args[2])) {
+		const char *err = bind_values(env, sdb, stmt, args[2]);
+		if (err != NULL) {
+			errmsg = err;
+			goto exit;
+		}
 	}
 
 	emacs_value Qcons = env->intern(env, "cons");
-	emacs_value fields = env->intern(env, "nil");
+	emacs_value fields = Qnil;
 	int count = sqlite3_column_count(stmt);
 	for (int i = 0; i < count; ++i) {
 		const char *name = sqlite3_column_name(stmt, i);
@@ -283,7 +294,7 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	emacs_value rargs[] = {fields};
 	fields = env->funcall(env, Qreverse, 1, rargs);
 
-	emacs_value cb = args[2];
+	emacs_value cb = args[3];
 	if (!env->is_not_nil(env, cb)) {
 		struct el_sql_resultset *result = malloc(sizeof(struct el_sql_resultset));
 
@@ -291,7 +302,8 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 		result->stmt = stmt;
 		result->fields = fields;
 		result->eof = false;
-		return env->make_user_ptr(env, el_sqlite3_resultset_free, result);
+		retval = env->make_user_ptr(env, el_sqlite3_resultset_free, result);
+		goto exit;
 	}
 
 	while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
@@ -302,11 +314,16 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 	}
 
 	sqlite3_finalize(stmt);
-	if (ret != SQLITE_OK && ret != SQLITE_DONE) {
-		return env->intern(env, "nil");
+
+ exit:
+	free(query);
+
+	if (errmsg != NULL) {
+		emacs_value errstr = env->make_string(env, errmsg, strlen(errmsg));
+		env->non_local_exit_signal(env, env->intern(env, "error"), errstr);
 	}
 
-	return env->intern(env, "nil");
+	return retval;
 }
 
 static emacs_value
@@ -409,8 +426,8 @@ emacs_module_init(struct emacs_runtime *ert)
 	bind_function (env, lsym, env->make_function(env, amin, amax, csym, doc, data))
 
 	DEFUN("sqlite3-core-new", Fsqlite3_new, 1, 1, NULL, NULL);
-	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 2, 3, NULL, NULL);
-	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 3, 3, NULL, NULL);
+	DEFUN("sqlite3-core-execute-batch", Fsqlite3_execute_batch, 3, 3, NULL, NULL);
+	DEFUN("sqlite3-core-execute", Fsqlite3_execute, 4, 4, NULL, NULL);
 	DEFUN("sqlite3-transaction", Fsqlite3_transaction, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-commit", Fsqlite3_commit, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-rollback", Fsqlite3_rollback, 1, 1, NULL, NULL);

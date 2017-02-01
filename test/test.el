@@ -1,6 +1,6 @@
 ;;; test-sqlite3.el --- Unit tests for sqlite3.el
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 
@@ -88,5 +88,23 @@
           (should (member (car row) '("Tom" "Bob" "Chris")))))
       (sqlite3-resultset-next resultset) ;; last call
       (should (sqlite3-resultset-eof resultset)))))
+
+(ert-deftest sqlite3-execute-select-with-placeholder ()
+  "Execute SELECT query with callback"
+  (let ((db (sqlite3-new)))
+    (sqlite3-execute-batch db "CREATE TABLE sample(id integer primary key, name text);")
+    (sqlite3-execute-batch db "INSERT INTO sample(name) values(\"Alice\");")
+    (sqlite3-execute-batch db "INSERT INTO sample(name) values(\"Bob\");")
+    (let ((rows 0))
+      (sqlite3-execute
+       db
+       "SELECT name FROM sample WHERE name = ?"
+       ["Alice"]
+       (lambda (row fields)
+         (cl-incf rows)
+         (should (member (car row) '("Alice")))))
+      (should (= rows 1)))
+
+    (should-error (sqlite3-execute-batch db "SELECT *" (lambda (&rest _args)) 'not-null))))
 
 ;;; test-sqlite3.el ends here

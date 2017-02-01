@@ -41,12 +41,11 @@ Execute SQL `query` for `db` database.
 First argument `db` must be sqlite3 instance. If you use placeholders in `query`,
 then you must pass `bounds` too.
 
-#### `(sqlite3-execute db query &optional callback)`
+#### `(sqlite3-execute db query &rest args)`
 
-Interface for executing `SELECT` query. If you pass `callback` argument,
-`callback` is called with `SELECT` results. `callback` takes 2 arguments,
-`row` and `fields`. `row` is value, `fields` are column names. If `callback`
-is not specified, this function returns `resultset` instance.
+Interface for executing `SELECT` query.
+
+Rest parameters are `bounds` and `callback`. You can its argument as, either '(bounds) or '(callback) or '(bounds callback). `callback` function is called with database row. `callback' takes two arguments, first argument is row element of list, second argument is field names of list.
 
 #### `(sqlite3-resultset-next resultset)`
 

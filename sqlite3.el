@@ -1,9 +1,10 @@
 ;;; sqlite3.el --- sqlite3 binding of Emacs Lisp
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-sqlite3
+;; Package-Requires: ((emacs "25"))
 ;; Version: 0.01
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,20 +38,32 @@ into memory."
   (cl-assert (not (null sqlite)))
   (cl-assert (stringp query))
   (if (null bounds)
-      (sqlite3-core-execute-batch sqlite query)
+      (sqlite3-core-execute-batch sqlite query nil)
     (unless (vectorp bounds)
       (cl-assert (listp bounds))
       (setq bounds (vconcat bounds)))
     (sqlite3-core-execute-batch sqlite query bounds)))
 
-(defun sqlite3-execute (sqlite query &optional callback)
-  "Execute SQL `query' which has `SELECT' command. If `callback' argument is
-specified, `callback' function is called with database row. `callback' takes
-two arguments, first argument is row element of list, second argument is
-field names of list."
+(defun sqlite3-execute (sqlite query &rest args)
+  "Execute SQL `query' which has `SELECT' command.
+
+Rest parameters are `bounds' and `callback'. You can its argument as,
+either '(bounds) or '(callback) or '(bounds callback). `callback' function
+is called with database row. `callback' takes two arguments, first argument
+is row element of list, second argument is field names of list."
   (cl-assert (not (null sqlite)))
   (cl-assert (stringp query))
-  (sqlite3-core-execute sqlite query callback))
+  (cl-assert (<= (length args) 2))
+  (let* ((rargs (reverse args))
+         (callback (car rargs))
+         bounds)
+    (when (functionp callback)
+      (setq rargs (cdr rargs)))
+    (when rargs
+      (setq bounds (car rargs)))
+    (when (and bounds (not (vectorp bounds)))
+      (setq bounds (vconcat bounds)))
+    (sqlite3-core-execute sqlite query bounds callback)))
 
 (provide 'sqlite3)
 
