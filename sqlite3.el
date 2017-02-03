@@ -57,8 +57,9 @@ is row element of list, second argument is field names of list."
   (let* ((rargs (reverse args))
          (callback (car rargs))
          bounds)
-    (when (functionp callback)
-      (setq rargs (cdr rargs)))
+    (if (functionp callback)
+        (setq rargs (cdr rargs))
+      (setq callback nil))
     (when rargs
       (setq bounds (car rargs)))
     (when (and bounds (not (vectorp bounds)))
