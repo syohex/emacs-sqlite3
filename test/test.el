@@ -107,4 +107,12 @@
 
     (should-error (sqlite3-execute-batch db "SELECT *" (lambda (&rest _args)) 'not-null))))
 
+(ert-deftest regression-issue4 ()
+  "Regression test https://github.com/syohex/emacs-sqlite3/issues/4"
+  (let ((db (sqlite3-new)))
+    (sqlite3-execute-batch db "CREATE TABLE foo(id integer primary key, editor text);")
+    (sqlite3-execute-batch db "INSERT INTO foo(editor) values(?)" ["Emacs"])
+    (sqlite3-execute db  "SELECT * FROM foo WHERE editor = ?;" ["Emacs"])
+    (should t)))
+
 ;;; test-sqlite3.el ends here
