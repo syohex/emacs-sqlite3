@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2016 by Syohei YOSHIDA
+  Copyright (C) 2017 by Syohei YOSHIDA
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -330,9 +330,8 @@ static emacs_value
 el_sqlite3_exec(emacs_env *env, sqlite3 *sdb, const char *query)
 {
 	int ret = sqlite3_exec(sdb, query, NULL, NULL, NULL);
-	if (ret != SQLITE_OK) {
+	if (ret != SQLITE_OK)
 		return env->intern(env, "nil");
-	}
 
 	return env->intern(env, "t");
 }
