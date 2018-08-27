@@ -221,8 +221,8 @@ row_to_value(emacs_env *env, sqlite3_stmt *stmt)
 			break;
 		}
 		case SQLITE_FLOAT: {
-			double value = sqlite3_column_int64(stmt, i);
-			v = env->make_integer(env, value);
+			double value = sqlite3_column_double(stmt, i);
+			v = env->make_float(env, value);
 			break;
 		}
 		case SQLITE_BLOB: {
