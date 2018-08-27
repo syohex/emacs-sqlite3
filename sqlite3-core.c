@@ -358,6 +358,29 @@ Fsqlite3_rollback(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *dat
 }
 
 static emacs_value
+Fsqlite3_load_extension(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
+{
+	sqlite3 *sdb = env->get_user_ptr(env, args[0]);
+	emacs_value module_path = args[1];
+
+	if (eq_type(env, env->type_of(env, module_path), "string")) {
+		ptrdiff_t size;
+		char *p = retrieve_string(env, module_path, &size);
+		char *path = malloc(size);
+		int result;
+		
+		memcpy(path, p, size);
+		result = sqlite3_load_extension(sdb, path, NULL, NULL);
+		free(p);
+		free(path);
+		
+		if (result ==  SQLITE_OK)
+			return env->intern(env, "t");
+	}
+	return env->intern(env, "nil");
+}
+			
+static emacs_value
 Fsqlite3_resultset_next(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
 {
 	struct el_sql_resultset *result = env->get_user_ptr(env, args[0]);
@@ -435,6 +458,7 @@ emacs_module_init(struct emacs_runtime *ert)
 	DEFUN("sqlite3-resultset-next", Fsqlite3_resultset_next, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-resultset-fields", Fsqlite3_resultset_fields, 1, 1, NULL, NULL);
 	DEFUN("sqlite3-resultset-eof", Fsqlite3_resultset_eof, 1, 1, NULL, NULL);
+	DEFUN("sqlite3-load-extension", Fsqlite3_load_extension, 2, 2, NULL, NULL);
 
 #undef DEFUN
 
