@@ -267,6 +267,7 @@ Fsqlite3_execute(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data
 			sqlite3_finalize(stmt);
 		}
 
+		errmsg = sqlite3_errmsg(sdb);
 		goto exit;
 	}
 
