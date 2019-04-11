@@ -1,5 +1,5 @@
 UNAME_S=$(shell uname -s)
-EMACS_ROOT ?= ../..
+EMACS_ROOT ?= ../emacs/trunk
 ifeq ($(UNAME_S),Darwin)
 	EMACS ?= /Applications/Emacs.app/Contents/MacOS/Emacs
 else

@@ -31,7 +31,7 @@
 (defun sqlite3-new (&optional dbpath)
   "Create `sqlite3' instance. If `dbpath' is omitted, then database is stored
 into memory."
-  (sqlite3-core-new dbpath))
+  (sqlite3-core-new (and dbpath (file-truename dbpath))))
 
 (defun sqlite3-execute-batch (sqlite query &optional bounds)
   "Execute SQL `query' for `db' database."
