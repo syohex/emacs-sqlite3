@@ -1,5 +1,7 @@
 # sqlite3.el
 
+*NOTE Emacs 29 supports native sqlite3. You can access sqlite3 DB without this module*
+
 [sqlite](https://www.sqlite.org/) binding of Emacs Lisp inspired by [mruby-sqlite3](https://github.com/mattn/mruby-sqlite3)
 
 ## Sample
